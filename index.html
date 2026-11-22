@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>ভোটার স্লিপ থার্মাল প্রিন্টার — অফলাইন অ্যাপ</title>
+  <style>
+    :root {
+      --bg: #f1f5f9;
+      --surface: #ffffff;
+      --primary: #1b365d;
+      --primary-dark: #0f223d;
+      --accent: #0d9488;
+      --accent-soft: #ccfbf1;
+      --warn: #d97706;
+      --danger: #dc2626;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --radius: 12px;
+      --shadow: 0 2px 8px rgba(15, 23, 42, 0.07);
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Noto Sans Bengali", "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding-bottom: 76px;
+      overflow-x: hidden;
+    }
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      color: #fff;
+      padding: 12px 14px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.16);
+    }
+    .hdr-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .hdr-title { font-size: 16px; font-weight: 700; line-height: 1.25; }
+    .hdr-sub { font-size: 11px; color: #cbd5e1; margin-top: 2px; }
+    .printer-pill {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 9px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.14);
+      border: 1px solid rgba(255,255,255,0.25);
+      color: #e2e8f0;
+      white-space: nowrap;
+      max-width: 150px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .printer-pill.connected {
+      background: #16a34a;
+      border-color: #4ade80;
+      color: #fff;
+    }
+    main {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 12px;
+    }
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px;
+      margin-bottom: 12px;
+      box-shadow: var(--shadow);
+    }
+    .card-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--primary);
+      margin: 0 0 10px 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    label.field-lbl {
+      display: block;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+    select, input[type="text"], input[type="number"] {
+      width: 100%;
+      padding: 9px 10px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 14px;
+      background: #fff;
+      color: var(--text);
+      outline: none;
+    }
+    select:focus, input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(27,54,93,0.12);
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 10px 14px;
+      border-radius: 9px;
+      border: none;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-accent { background: var(--accent); color: #fff; }
+    .btn-outline { background: #fff; color: var(--primary); border: 1px solid #cbd5e1; }
+    .btn-danger { background: #fee2e2; color: var(--danger); border: 1px solid #fecaca; }
+    .btn-sm { padding: 7px 10px; font-size: 12px; }
+    .btn-block { width: 100%; }
+
+    /* Slip Preview Box */
+    .preview-stage {
+      background: #e2e8f0;
+      border-radius: 10px;
+      padding: 12px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    #slipCanvas {
+      background: #fff;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.14);
+      max-width: 100%;
+      height: auto;
+      border-radius: 4px;
+    }
+
+    /* List Items */
+    .v-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .v-row:last-child { border-bottom: none; }
+    .v-name { font-size: 14px; font-weight: 700; color: var(--text); }
+    .v-meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .v-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+    .chips {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+    .chip {
+      border: 1px solid #cbd5e1;
+      background: #f8fafc;
+      color: var(--text);
+      font-size: 12px;
+      font-weight: 600;
+      padding: 6px 11px;
+      border-radius: 999px;
+      cursor: pointer;
+    }
+    .chip.active {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+    }
+
+    .room-row {
+      display: grid;
+      grid-template-columns: 110px 1fr;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .printer-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      margin-bottom: 8px;
+      background: #f8fafc;
+    }
+    .printer-item.selected {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+    }
+
+    /* Bottom Nav */
+    nav.bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 40;
+      background: #fff;
+      border-top: 1px solid var(--border);
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      padding: 6px 4px;
+      box-shadow: 0 -2px 10px rgba(0,0,0,0.06);
+    }
+    .nav-btn {
+      background: none;
+      border: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--muted);
+      cursor: pointer;
+      padding: 4px 2px;
+    }
+    .nav-btn.active { color: var(--primary); }
+    .nav-btn svg { width: 20px; height: 20px; }
+
+    .toast {
+      position: fixed;
+      bottom: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #0f172a;
+      color: #fff;
+      padding: 9px 14px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+      z-index: 70;
+      display: none;
+      max-width: 92vw;
+      text-align: center;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+    }
+    .toast.show { display: block; }
+    .hidden-file { display: none; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="hdr-row">
+      <div>
+        <div class="hdr-title" id="hdrTitle">ভোটার স্লিপ প্রিন্টার</div>
+        <div class="hdr-sub" id="hdrSub">নমুনা বুথ ৯০ • ৫৮ মিমি থার্মাল</div>
+      </div>
+      <span class="printer-pill" id="hdrPrinterStatus">প্রিন্টার সেট নয়</span>
+    </div>
+  </header>
+
+  <main>
+    <!-- TAB 1: SINGLE SLIP & SEARCH -->
+    <section id="tab-single" class="tab-pane active">
+      <div class="card">
+        <div class="grid-2">
+          <div>
+            <label class="field-lbl" for="boothSelect">বুথ নির্বাচন</label>
+            <select id="boothSelect"></select>
+          </div>
+          <div>
+            <label class="field-lbl" for="searchInput">ক্রমিক / নাম / বাড়ি খুঁজুন</label>
+            <input type="text" id="searchInput" placeholder="যেমন: 145 বা ঘোষ..." />
+          </div>
+        </div>
+        <div class="chips" id="templateChips">
+          <button type="button" class="chip active" data-tpl="compact">আল্ট্রা-কম্প্যাক্ট (কম কাগজ)</button>
+          <button type="button" class="chip" data-tpl="standard">স্ট্যান্ডার্ড ক্লিন</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span id="previewTitle">লাইভ স্লিপ প্রিভিউ (৫৮ মিমি)</span>
+          <span id="printedCountBadge" style="font-size:11px; color:var(--accent); font-weight:700;">প্রিন্ট হয়েছে: ০</span>
+        </div>
+        <div class="preview-stage">
+          <canvas id="slipCanvas" width="384" height="220"></canvas>
+        </div>
+        <div class="grid-2">
+          <button type="button" id="printCurrentBtn" class="btn btn-primary">ব্লুটুথ প্রিন্ট করুন</button>
+          <button type="button" id="shareSlipBtn" class="btn btn-outline">ইমেজ সেভ / শেয়ার</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><span id="voterListCount">ভোটার তালিকা</span></div>
+        <div id="voterList"></div>
+      </div>
+    </section>
+
+    <!-- TAB 2: FAMILY & RANGE BATCH PRINT -->
+    <section id="tab-batch" class="tab-pane">
+      <div class="card">
+        <div class="card-title"><span>ক্রমিক রেঞ্জ ব্যাচ প্রিন্ট</span></div>
+        <div class="grid-2">
+          <div>
+            <label class="field-lbl" for="rangeStart">শুরু ক্রমিক নং</label>
+            <input type="number" id="rangeStart" value="1" min="1" />
+          </div>
+          <div>
+            <label class="field-lbl" for="rangeEnd">শেষ ক্রমিক নং</label>
+            <input type="number" id="rangeEnd" value="10" min="1" />
+          </div>
+        </div>
+        <div class="grid-2" style="margin-top:10px;">
+          <button type="button" id="batchRangePrintBtn" class="btn btn-primary">রেঞ্জ প্রিন্ট শুরু করুন</button>
+          <button type="button" id="stopBatchBtn" class="btn btn-danger" style="display:none;">প্রিন্ট থামান</button>
+        </div>
+        <div id="batchStatusMsg" style="font-size:12px; color:var(--accent); font-weight:700; margin-top:8px;"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>পরিবার অনুযায়ী স্লিপ (বাড়ি নং)</span>
+          <input type="text" id="familySearchInput" placeholder="বাড়ি নং বা নাম..." style="width:140px; padding:6px 8px; font-size:12px;" />
+        </div>
+        <div id="familyList"></div>
+      </div>
+    </section>
+
+    <!-- TAB 3: BLUETOOTH PRINTER SETUP -->
+    <section id="tab-printer" class="tab-pane">
+      <div class="card">
+        <div class="card-title"><span>প্রিন্টার সেটিংস</span></div>
+        <div class="grid-2">
+          <div>
+            <label class="field-lbl" for="paperWidthSelect">কাগজের প্রস্থ</label>
+            <select id="paperWidthSelect">
+              <option value="384">৫৮ মিমি (384 px — সাধারণ)</option>
+              <option value="576">৮০ মিমি (576 px — চওড়া)</option>
+            </select>
+          </div>
+          <div>
+            <label class="field-lbl" for="fontScaleSelect">অক্ষরের সাইজ</label>
+            <select id="fontScaleSelect">
+              <option value="0.9">ছোট (সবচেয়ে কম কাগজ)</option>
+              <option value="1" selected>মাঝারি (আদর্শ)</option>
+              <option value="1.15">বড় (স্পষ্ট)</option>
+            </select>
+          </div>
+        </div>
+        <button type="button" id="testPrintBtn" class="btn btn-accent btn-block" style="margin-top:10px;">টেস্ট স্লিপ প্রিন্ট করুন</button>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>ব্লুটুথ থার্মাল প্রিন্টার</span>
+          <button type="button" id="scanPrintersBtn" class="btn btn-outline btn-sm">রিফ্রেশ করুন</button>
+        </div>
+        <p style="font-size:12px; color:var(--muted); margin:0 0 10px 0;">
+          প্রথমে আপনার ফোনের Bluetooth সেটিংস থেকে থার্মাল প্রিন্টারটি Pair করুন, তারপর নিচে থেকে প্রিন্টারটি সিলেক্ট করুন।
+        </p>
+        <div id="printerList"></div>
+      </div>
+    </section>
+
+    <!-- TAB 4: WARD JSON & ROOM NUMBERS -->
+    <section id="tab-setup" class="tab-pane">
+      <div class="card">
+        <div class="card-title"><span>১. ওয়ার্ড JSON ফাইল লোড করুন</span></div>
+        <p style="font-size:12px; color:var(--muted); margin:0 0 10px 0;">
+          আপনার তৈরি করা `krishnanagar_ward17.json`, `ward18.json` বা যেকোনো ওয়ার্ডের JSON ফাইল এখান থেকে লোড করুন।
+        </p>
+        <input type="file" id="jsonFileInput" class="hidden-file" accept=".json,application/json" />
+        <button type="button" id="importJsonBtn" class="btn btn-primary btn-block">+ ওয়ার্ড JSON সিলেক্ট করুন</button>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>২. বুথ অনুযায়ী রুম নম্বর সেট করুন</span>
+          <button type="button" id="saveRoomsBtn" class="btn btn-accent btn-sm">সেভ করুন</button>
+        </div>
+        <p style="font-size:12px; color:var(--muted); margin:0 0 10px 0;">
+          প্রতিটি বুথের পাশে রুম/কক্ষ নম্বর লিখে সেভ করলে ওই বুথের সব স্লিপে অটোমেটিক রুম নম্বর প্রিন্ট হবে।
+        </p>
+        <div id="roomsEditor"></div>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast"></div>
+
+  <nav class="bottom-nav">
+    <button type="button" class="nav-btn active" data-tab="tab-single">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+      <span>স্লিপ প্রিন্ট</span>
+    </button>
+    <button type="button" class="nav-btn" data-tab="tab-batch">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      <span>পরিবার / ব্যাচ</span>
+    </button>
+    <button type="button" class="nav-btn" data-tab="tab-printer">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6.5 6.5 17.5 17.5 12 23 12 1 17.5 6.5 6.5 17.5"/></svg>
+      <span>প্রিন্টার</span>
+    </button>
+    <button type="button" class="nav-btn" data-tab="tab-setup">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l-.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.26.6.85 1 1.51 1H21a2 2 0 0 1 0 4h-.09c-.66 0-1.25.4-1.51 1z"/></svg>
+      <span>সেটআপ</span>
+    </button>
+  </nav>
+
+  <script>
+    (function () {
+      const BN = "০১২৩৪৫৬৭৮৯";
+      function toBn(n) { return String(n).replace(/\d/g, d => BN[Number(d)]); }
+      function esc(s) { return String(s || "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
+      function loadLS(k, fb) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : fb; } catch (e) { return fb; } }
+      function saveLS(k, val) { try { localStorage.setItem(k, JSON.stringify(val)); } catch (e) {} }
+
+      function buildSamplePack() {
+        return {
+          id: "sample_slip_w17",
+          city: "কৃষ্ণনগর পৌরসভা",
+          ward: "১৭",
+          title: "কৃষ্ণনগর — ওয়ার্ড ১৭ (নমুনা)",
+          subtitle: "৮৩ কৃষ্ণনগর উত্তর",
+          rooms: { "90": "১" },
+          sections: { "90": { "1": "অরবিন্দ সরণী সার্কুলার রোড", "2": "বিপ্রদাস পালচৌধুরী রোড" } },
+          voters: [
+            [90, 145, 1, "রাহুলদেব ঘোষ", "F", "সুব্রত ঘোষ", "48", "48", 34, "M", 0, 0, 3],
+            [90, 146, 1, "মৌসুমী ঘোষ", "H", "রাহুলদেব ঘোষ", "48", "48", 30, "F", 0, 0, 3],
+            [90, 147, 1, "সুব্রত ঘোষ", "F", "হরিপদ ঘোষ", "48", "48", 62, "M", 0, 0, 3],
+            [90, 148, 1, "রীনা ঘোষ", "H", "সুব্রত ঘোষ", "48", "48", 56, "F", 0, 0, 3],
+            [90, 149, 2, "অভিজিৎ বিশ্বাস", "F", "নরেশ বিশ্বাস", "112", "112", 41, "M", 0, 0, 1],
+            [90, 150, 2, "প্রিয়াঙ্কা বিশ্বাস", "H", "অভিজিৎ বিশ্বাস", "112", "112", 36, "F", 0, 0, 1]
+          ]
+        };
+      }
+
+      const LS_PACK = "vsp_pack_v1";
+      const LS_ROOMS = "vsp_rooms_v1";
+      const LS_PRINTER = "vsp_printer_v1"; // { name, address }
+      const LS_SETTINGS = "vsp_settings_v1"; // { width, scale, tpl }
+      const LS_COUNT = "vsp_printed_cnt_v1";
+
+      let pack = loadLS(LS_PACK, null) || buildSamplePack();
+      let roomsMap = loadLS(LS_ROOMS, pack.rooms || { "90": "১" });
+      let selectedPrinter = loadLS(LS_PRINTER, null);
+      let settings = loadLS(LS_SETTINGS, { width: 384, scale: 1, tpl: "compact" });
+      let printedCount = loadLS(LS_COUNT, 0);
+
+      let currentBooth = null;
+      let selectedVoter = null;
+      let batchCancel = false;
+      let toastTimer = null;
+
+      function showToast(msg) {
+        const el = document.getElementById("toast");
+        el.textContent = msg;
+        el.classList.add("show");
+        if (toastTimer) clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => el.classList.remove("show"), 3000);
+      }
+
+      function getBooths() {
+        const s = new Set();
+        (pack.voters || []).forEach(v => s.add(v[0]));
+        return Array.from(s).sort((a, b) => a - b);
+      }
+
+      function getBoothVoters() {
+        return (pack.voters || []).filter(v => v[0] === currentBooth);
+      }
+
+      function getRoom(booth) {
+        return (roomsMap && roomsMap[String(booth)]) || (pack.rooms && pack.rooms[String(booth)]) || "";
+      }
+
+      function getSecName(booth, secNo) {
+        const secs = (pack.sections && pack.sections[String(booth)]) || {};
+        return secs[String(secNo)] || ("সেকশন " + toBn(secNo));
+      }
+
+      function updateHeader() {
+        document.getElementById("hdrTitle").textContent = pack.title || "ভোটার স্লিপ প্রিন্টার";
+        const wLbl = settings.width === 576 ? "৮০ মিমি" : "৫৮ মিমি";
+        const rTxt = getRoom(currentBooth) ? (" • রুম " + getRoom(currentBooth)) : "";
+        document.getElementById("hdrSub").textContent = "বুথ " + toBn(currentBooth) + rTxt + " • " + wLbl;
+        const pill = document.getElementById("hdrPrinterStatus");
+        if (selectedPrinter && selectedPrinter.name) {
+          pill.textContent = "BT: " + selectedPrinter.name;
+          pill.classList.add("connected");
+        } else {
+          pill.textContent = "প্রিন্টার সেট নয়";
+          pill.classList.remove("connected");
+        }
+        document.getElementById("printedCountBadge").textContent = "প্রিন্ট হয়েছে: " + toBn(printedCount);
+        document.getElementById("previewTitle").textContent = "লাইভ স্লিপ প্রিভিউ (" + wLbl + ")";
+      }
+
+      function populateBooths() {
+        const booths = getBooths();
+        const sel = document.getElementById("boothSelect");
+        sel.innerHTML = "";
+        booths.forEach(b => {
+          const opt = document.createElement("option");
+          opt.value = String(b);
+          const cnt = pack.voters.filter(v => v[0] === b).length;
+          opt.textContent = "বুথ " + toBn(b) + " (" + toBn(cnt) + " জন)";
+          sel.appendChild(opt);
+        });
+        if (!currentBooth || !booths.includes(currentBooth)) currentBooth = booths[0] || 90;
+        sel.value = String(currentBooth);
+        const list = getBoothVoters();
+        selectedVoter = list[0] || null;
+      }
+
+      // Draw crisp monochrome-ready Bengali slip onto Canvas
+      function drawSingleSlip(canvas, v) {
+        if (!v) return;
+        const W = Number(settings.width) || 384;
+        const sc = (W / 384) * (Number(settings.scale) || 1);
+        const ctx = canvas.getContext("2d");
+        const pad = Math.round(12 * sc);
+        const room = getRoom(v[0]);
+        const relLbl = v[4] === "H" ? "স্বামী" : (v[4] === "M" ? "মাতা" : "পিতা");
+        const genLbl = v[9] === "F" ? "মহিলা" : (v[9] === "M" ? "পুরুষ" : "অন্যান্য");
+        const secName = getSecName(v[0], v[2]);
+
+        const isStd = settings.tpl === "standard";
+        const fHead = Math.round(18 * sc);
+        const fBig = Math.round(21 * sc);
+        const fBody = Math.round(18 * sc);
+        const fSmall = Math.round(15 * sc);
+        const lineH = Math.round(26 * sc);
+
+        // Wrap section name if long
+        ctx.font = "600 " + fSmall + "px 'Noto Sans Bengali', sans-serif";
+        const secLines = wrapText(ctx, "পাড়া: " + secName, W - pad * 2);
+
+        let estH = pad * 2 + lineH * 5 + secLines.length * Math.round(21 * sc) + Math.round(24 * sc);
+        if (isStd) estH += Math.round(52 * sc);
+
+        canvas.width = W;
+        canvas.height = estH;
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, W, estH);
+        ctx.fillStyle = "#000000";
+        ctx.textBaseline = "top";
+
+        let y = pad;
+
+        if (isStd) {
+          ctx.font = "700 " + fHead + "px 'Noto Sans Bengali', sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillText((pack.city || "কৃষ্ণনগর পৌরসভা") + " • ওয়ার্ড " + (pack.ward || ""), W / 2, y);
+          y += Math.round(24 * sc);
+          ctx.font = "600 " + fSmall + "px 'Noto Sans Bengali', sans-serif";
+          ctx.fillText(pack.subtitle || "ভোটার তথ্য স্লিপ", W / 2, y);
+          y += Math.round(22 * sc);
+          ctx.textAlign = "left";
+        }
+
+        // Top bold divider
+        drawDashed(ctx, pad, y, W - pad, y, sc);
+        y += Math.round(8 * sc);
+
+        // Header line: বুথ | ক্রমিক | রুম
+        ctx.font = "800 " + fBig + "px 'Noto Sans Bengali', sans-serif";
+        ctx.textAlign = "center";
+        const topLine = "বুথ: " + toBn(v[0]) + "  |  ক্রমিক: " + toBn(v[1]) + (room ? ("  |  রুম: " + toBn(room)) : "");
+        ctx.fillText(topLine, W / 2, y);
+        y += Math.round(28 * sc);
+
+        drawDashed(ctx, pad, y, W - pad, y, sc);
+        y += Math.round(10 * sc);
+
+        // Voter details
+        ctx.textAlign = "left";
+        ctx.font = "800 " + fBody + "px 'Noto Sans Bengali', sans-serif";
+        ctx.fillText("নাম  : " + v[3], pad, y);
+        y += lineH;
+
+        ctx.font = "600 " + fBody + "px 'Noto Sans Bengali', sans-serif";
+        ctx.fillText(relLbl + " : " + (v[5] || "-"), pad, y);
+        y += lineH;
+
+        ctx.font = "600 " + fSmall + "px 'Noto Sans Bengali', sans-serif";
+        ctx.fillText("বয়স : " + toBn(v[8]) + " (" + genLbl + ")  |  বাড়ি: " + (v[6] || "-"), pad, y);
+        y += Math.round(23 * sc);
+
+        secLines.forEach(ln => {
+          ctx.fillText(ln, pad, y);
+          y += Math.round(21 * sc);
+        });
+
+        y += Math.round(4 * sc);
+        drawDashed(ctx, pad, y, W - pad, y, sc);
+      }
+
+      function drawFamilyComboSlip(canvas, houseNo, members) {
+        const W = Number(settings.width) || 384;
+        const sc = (W / 384) * (Number(settings.scale) || 1);
+        const ctx = canvas.getContext("2d");
+        const pad = Math.round(12 * sc);
+        const booth = members[0][0];
+        const room = getRoom(booth);
+        const secName = getSecName(booth, members[0][2]);
+        const fBig = Math.round(19 * sc);
+        const fBody = Math.round(16 * sc);
+        const fSmall = Math.round(14 * sc);
+        const rowH = Math.round(24 * sc);
+
+        const H = pad * 2 + Math.round(92 * sc) + members.length * rowH + Math.round(32 * sc);
+        canvas.width = W;
+        canvas.height = H;
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, W, H);
+        ctx.fillStyle = "#000000";
+        ctx.textBaseline = "top";
+
+        let y = pad;
+        drawDashed(ctx, pad, y, W - pad, y, sc);
+        y += Math.round(8 * sc);
+
+        ctx.font = "800 " + fBig + "px 'Noto Sans Bengali', sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("বুথ: " + toBn(booth) + (room ? (" | রুম: " + toBn(room)) : "") + " | বাড়ি: " + houseNo, W / 2, y);
+        y += Math.round(26 * sc);
+
+        ctx.font = "600 " + fSmall + "px 'Noto Sans Bengali', sans-serif";
+        ctx.fillText(secName.slice(0, 32), W / 2, y);
+        y += Math.round(20 * sc);
+
+        drawDashed(ctx, pad, y, W - pad, y, sc);
+        y += Math.round(8 * sc);
+
+        ctx.textAlign = "left";
+        ctx.font = "700 " + fBody + "px 'Noto Sans Bengali', sans-serif";
+        members.forEach(m => {
+          const g = m[9] === "F" ? "ম" : "পু";
+          const line = "#" + toBn(m[1]) + "  " + m[3] + " (" + toBn(m[8]) + "/" + g + ")";
+          ctx.fillText(line, pad, y);
+          y += rowH;
+        });
+
+        y += Math.round(4 * sc);
+        drawDashed(ctx, pad, y, W - pad, y, sc);
+        y += Math.round(8 * sc);
+        ctx.font = "700 " + fSmall + "px 'Noto Sans Bengali', sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("মোট সদস্য: " + toBn(members.length) + " জন", W / 2, y);
+      }
+
+      function drawDashed(ctx, x1, y1, x2, y2, sc) {
+        ctx.save();
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = Math.max(1.5, 2 * sc);
+        ctx.setLineDash([6 * sc, 4 * sc]);
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      function wrapText(ctx, text, maxW) {
+        const words = String(text).split(" ");
+        const lines = [];
+        let cur = "";
+        words.forEach(w => {
+          const test = cur ? (cur + " " + w) : w;
+          if (ctx.measureText(test).width > maxW && cur) {
+            lines.push(cur);
+            cur = w;
+          } else {
+            cur = test;
+          }
+        });
+        if (cur) lines.push(cur);
+        return lines;
+      }
+
+      function sendCanvasToPrinter(canvas, label) {
+        const dataUrl = canvas.toDataURL("image/png");
+        const base64 = dataUrl.split(",")[1];
+        if (window.AndroidPrinter && typeof window.AndroidPrinter.printBase64Png === "function") {
+          if (!selectedPrinter || !selectedPrinter.address) {
+            showToast("প্রথমে 'প্রিন্টার' ট্যাব থেকে ব্লুটুথ প্রিন্টার সিলেক্ট করুন");
+            return false;
+          }
+          const res = window.AndroidPrinter.printBase64Png(selectedPrinter.address, base64, Number(settings.width) || 384);
+          if (res === "OK") {
+            printedCount++;
+            saveLS(LS_COUNT, printedCount);
+            updateHeader();
+            showToast(label + " প্রিন্ট হয়েছে ✓");
+            return true;
+          } else {
+            showToast("প্রিন্ট এরর: " + res);
+            return false;
+          }
+        } else {
+          printedCount++;
+          saveLS(LS_COUNT, printedCount);
+          updateHeader();
+          showToast("প্রিভিউ মোড: " + label + " রেডি (অ্যাপ APK-তে ব্লুটুথ প্রিন্ট চলবে)");
+          return true;
+        }
+      }
+
+      function renderVoterList() {
+        const list = getBoothVoters();
+        const q = (document.getElementById("searchInput").value || "").trim().toLowerCase();
+        const filtered = list.filter(v => {
+          if (!q) return true;
+          return String(v[1]).includes(q) ||
+            String(v[3] || "").toLowerCase().includes(q) ||
+            String(v[5] || "").toLowerCase().includes(q) ||
+            String(v[6] || "").toLowerCase().includes(q);
+        });
+        document.getElementById("voterListCount").textContent = "ভোটার তালিকা (" + toBn(filtered.length) + " জন)";
+        const box = document.getElementById("voterList");
+        if (!filtered.length) {
+          box.innerHTML = '<div style="text-align:center;padding:18px;color:var(--muted);font-size:13px;">কোনো ভোটার পাওয়া যায়নি</div>';
+          return;
+        }
+        const shown = filtered.slice(0, 80);
+        box.innerHTML = shown.map(v =>
+          '<div class="v-row">' +
+            '<div>' +
+              '<div class="v-name">#' + toBn(v[1]) + ' — ' + esc(v[3]) + '</div>' +
+              '<div class="v-meta">' + (v[4] === "H" ? "স্বামী" : "পিতা") + ': ' + esc(v[5]) + ' • বাড়ি: ' + esc(v[6] || "-") + '</div>' +
+            '</div>' +
+            '<div class="v-actions">' +
+              '<button type="button" class="btn btn-outline btn-sm" data-prev="' + v[1] + '">দেখুন</button>' +
+              '<button type="button" class="btn btn-primary btn-sm" data-qprint="' + v[1] + '">প্রিন্ট</button>' +
+            '</div>' +
+          '</div>'
+        ).join("") + (filtered.length > 80 ? '<div style="text-align:center;font-size:11px;color:var(--muted);padding-top:8px;">প্রথম ৮০ জন দেখানো হচ্ছে — নাম বা ক্রমিক লিখে সার্চ করুন</div>' : '');
+      }
+
+      document.getElementById("voterList").addEventListener("click", e => {
+        const pBtn = e.target.closest("[data-prev]");
+        const qBtn = e.target.closest("[data-qprint]");
+        if (pBtn) {
+          const sl = Number(pBtn.dataset.prev);
+          const v = getBoothVoters().find(x => x[1] === sl);
+          if (v) {
+            selectedVoter = v;
+            drawSingleSlip(document.getElementById("slipCanvas"), v);
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }
+        } else if (qBtn) {
+          const sl = Number(qBtn.dataset.qprint);
+          const v = getBoothVoters().find(x => x[1] === sl);
+          if (v) {
+            selectedVoter = v;
+            const c = document.getElementById("slipCanvas");
+            drawSingleSlip(c, v);
+            sendCanvasToPrinter(c, "ক্রমিক #" + toBn(v[1]));
+          }
+        }
+      });
+
+      function renderFamilies() {
+        const q = (document.getElementById("familySearchInput").value || "").trim().toLowerCase();
+        const groups = {};
+        getBoothVoters().forEach(v => {
+          const h = (v[7] || v[6] || "").trim();
+          if (!h) return;
+          if (!groups[h]) groups[h] = [];
+          groups[h].push(v);
+        });
+        let entries = Object.entries(groups).filter(([h, mems]) => {
+          if (!q) return true;
+          return h.toLowerCase().includes(q) || mems.some(m => String(m[3]).toLowerCase().includes(q));
+        });
+        entries.sort((a, b) => b[1].length - a[1].length);
+
+        const box = document.getElementById("familyList");
+        if (!entries.length) {
+          box.innerHTML = '<div style="text-align:center;padding:18px;color:var(--muted);font-size:13px;">কোনো পরিবার পাওয়া যায়নি</div>';
+          return;
+        }
+        box.innerHTML = entries.slice(0, 60).map(([h, mems]) =>
+          '<div class="v-row">' +
+            '<div>' +
+              '<div class="v-name">বাড়ি নং: ' + esc(h) + ' (' + toBn(mems.length) + ' জন)</div>' +
+              '<div class="v-meta">' + esc(mems.slice(0, 3).map(m => m[3]).join(", ")) + (mems.length > 3 ? "..." : "") + '</div>' +
+            '</div>' +
+            '<div class="v-actions">' +
+              '<button type="button" class="btn btn-accent btn-sm" data-fcombo="' + esc(h) + '">কম্বো</button>' +
+              '<button type="button" class="btn btn-primary btn-sm" data-findiv="' + esc(h) + '">সবাই</button>' +
+            '</div>' +
+          '</div>'
+        ).join("");
+      }
+
+      document.getElementById("familyList").addEventListener("click", async e => {
+        const cBtn = e.target.closest("[data-fcombo]");
+        const iBtn = e.target.closest("[data-findiv]");
+        if (!cBtn && !iBtn) return;
+        const h = (cBtn || iBtn).dataset[cBtn ? "fcombo" : "findiv"];
+        const mems = getBoothVoters().filter(v => ((v[7] || v[6] || "").trim()) === h);
+        if (!mems.length) return;
+        const c = document.getElementById("slipCanvas");
+        if (cBtn) {
+          drawFamilyComboSlip(c, h, mems);
+          sendCanvasToPrinter(c, "বাড়ি " + h + " ফ্যামিলি কম্বো");
+        } else {
+          for (let i = 0; i < mems.length; i++) {
+            drawSingleSlip(c, mems[i]);
+            const ok = sendCanvasToPrinter(c, "ক্রমিক #" + toBn(mems[i][1]));
+            if (!ok) break;
+            await new Promise(r => setTimeout(r, 450));
+          }
+        }
+      });
+
+      document.getElementById("batchRangePrintBtn").addEventListener("click", async () => {
+        const s = Number(document.getElementById("rangeStart").value);
+        const e = Number(document.getElementById("rangeEnd").value);
+        const targets = getBoothVoters().filter(v => v[1] >= s && v[1] <= e);
+        if (!targets.length) {
+          showToast("এই রেঞ্জে কোনো ভোটার নেই");
+          return;
+        }
+        batchCancel = false;
+        const stopBtn = document.getElementById("stopBatchBtn");
+        const statusEl = document.getElementById("batchStatusMsg");
+        stopBtn.style.display = "inline-flex";
+        const c = document.getElementById("slipCanvas");
+        for (let i = 0; i < targets.length; i++) {
+          if (batchCancel) {
+            statusEl.textContent = "প্রিন্ট থামানো হয়েছে (" + toBn(i) + "/" + toBn(targets.length) + ")";
+            break;
+          }
+          statusEl.textContent = "প্রিন্ট হচ্ছে: " + toBn(i + 1) + " / " + toBn(targets.length) + " (#" + toBn(targets[i][1]) + ")";
+          drawSingleSlip(c, targets[i]);
+          const ok = sendCanvasToPrinter(c, "#" + toBn(targets[i][1]));
+          if (!ok) break;
+          await new Promise(r => setTimeout(r, 500));
+        }
+        stopBtn.style.display = "none";
+        if (!batchCancel) statusEl.textContent = "মোট " + toBn(targets.length) + "টি স্লিপ প্রিন্ট সম্পন্ন ✓";
+      });
+
+      document.getElementById("stopBatchBtn").addEventListener("click", () => {
+        batchCancel = true;
+      });
+
+      // Printers List
+      function loadPairedPrinters() {
+        const box = document.getElementById("printerList");
+        let list = [];
+        if (window.AndroidPrinter && typeof window.AndroidPrinter.getPairedPrinters === "function") {
+          try {
+            list = JSON.parse(window.AndroidPrinter.getPairedPrinters() || "[]");
+          } catch (e) { list = []; }
+        } else {
+          list = [{ name: "Demo-POS58-Thermal (প্রিভিউ)", address: "DEMO:00:11:22:33" }];
+        }
+        if (!list.length) {
+          box.innerHTML = '<div style="text-align:center;padding:16px;color:var(--muted);font-size:13px;">কোনো পেয়ার করা ব্লুটুথ প্রিন্টার পাওয়া যায়নি। ফোনের Bluetooth অন করে প্রিন্টার Pair করুন ও রিফ্রেশ দিন।</div>';
+          return;
+        }
+        box.innerHTML = list.map(p => {
+          const isSel = selectedPrinter && selectedPrinter.address === p.address;
+          return '<div class="printer-item ' + (isSel ? 'selected' : '') + '">' +
+            '<div><div class="v-name">' + esc(p.name) + '</div><div class="v-meta">' + esc(p.address) + '</div></div>' +
+            '<button type="button" class="btn btn-sm ' + (isSel ? 'btn-accent' : 'btn-primary') + '" data-paddr="' + esc(p.address) + '" data-pname="' + esc(p.name) + '">' + (isSel ? 'সিলেক্টেড ✓' : 'সিলেক্ট') + '</button>' +
+          '</div>';
+        }).join("");
+      }
+
+      document.getElementById("printerList").addEventListener("click", e => {
+        const btn = e.target.closest("[data-paddr]");
+        if (!btn) return;
+        selectedPrinter = { address: btn.dataset.paddr, name: btn.dataset.pname };
+        saveLS(LS_PRINTER, selectedPrinter);
+        updateHeader();
+        loadPairedPrinters();
+        showToast(selectedPrinter.name + " সেট হয়েছে ✓");
+      });
+
+      document.getElementById("scanPrintersBtn").addEventListener("click", () => {
+        loadPairedPrinters();
+        showToast("ব্লুটুথ লিস্ট আপডেট হয়েছে");
+      });
+
+      document.getElementById("testPrintBtn").addEventListener("click", () => {
+        const c = document.getElementById("slipCanvas");
+        if (selectedVoter) drawSingleSlip(c, selectedVoter);
+        sendCanvasToPrinter(c, "টেস্ট স্লিপ");
+      });
+
+      // Rooms Editor
+      function renderRoomsEditor() {
+        const booths = getBooths();
+        const box = document.getElementById("roomsEditor");
+        box.innerHTML = booths.map(b =>
+          '<div class="room-row">' +
+            '<span style="font-size:13px;font-weight:700;">বুথ নং ' + toBn(b) + '</span>' +
+            '<input type="text" data-roombooth="' + b + '" value="' + esc(getRoom(b)) + '" placeholder="রুম নং (যেমন: ১ বা ২)" />' +
+          '</div>'
+        ).join("");
+      }
+
+      document.getElementById("saveRoomsBtn").addEventListener("click", () => {
+        document.querySelectorAll("[data-roombooth]").forEach(inp => {
+          roomsMap[inp.dataset.roombooth] = inp.value.trim();
+        });
+        saveLS(LS_ROOMS, roomsMap);
+        updateHeader();
+        if (selectedVoter) drawSingleSlip(document.getElementById("slipCanvas"), selectedVoter);
+        showToast("সব বুথের রুম নম্বর সেভ হয়েছে ✓");
+      });
+
+      // Import Ward JSON
+      document.getElementById("importJsonBtn").addEventListener("click", () => {
+        document.getElementById("jsonFileInput").click();
+      });
+      document.getElementById("jsonFileInput").addEventListener("change", e => {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = ev => {
+          try {
+            const parsed = JSON.parse(String(ev.target.result || "{}"));
+            if (!Array.isArray(parsed.voters) || !parsed.voters.length) {
+              showToast("সঠিক ওয়ার্ড JSON নয়");
+              return;
+            }
+            pack = parsed;
+            saveLS(LS_PACK, pack);
+            if (pack.rooms) {
+              roomsMap = Object.assign({}, roomsMap, pack.rooms);
+              saveLS(LS_ROOMS, roomsMap);
+            }
+            currentBooth = null;
+            populateBooths();
+            renderAll();
+            showToast((pack.title || "নতুন ওয়ার্ড") + " লোড হয়েছে (" + toBn(pack.voters.length) + " জন)");
+          } catch (err) {
+            showToast("JSON পড়তে সমস্যা হয়েছে");
+          }
+        };
+        reader.readAsText(file, "utf-8");
+        e.target.value = "";
+      });
+
+      // Single Print & Share PNG
+      document.getElementById("printCurrentBtn").addEventListener("click", () => {
+        if (!selectedVoter) return;
+        const c = document.getElementById("slipCanvas");
+        drawSingleSlip(c, selectedVoter);
+        sendCanvasToPrinter(c, "ক্রমিক #" + toBn(selectedVoter[1]));
+      });
+
+      document.getElementById("shareSlipBtn").addEventListener("click", () => {
+        if (!selectedVoter) return;
+        const c = document.getElementById("slipCanvas");
+        drawSingleSlip(c, selectedVoter);
+        const dataUrl = c.toDataURL("image/png");
+        const base64 = dataUrl.split(",")[1];
+        const fname = "slip_b" + selectedVoter[0] + "_sl" + selectedVoter[1] + ".png";
+        if (window.AndroidPrinter && typeof window.AndroidPrinter.shareBase64Png === "function") {
+          window.AndroidPrinter.shareBase64Png(fname, base64);
+        } else {
+          const a = document.createElement("a");
+          a.href = dataUrl;
+          a.download = fname;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          showToast(fname + " ডাউনলোড হয়েছে");
+        }
+      });
+
+      // Controls
+      document.getElementById("boothSelect").addEventListener("change", e => {
+        currentBooth = Number(e.target.value);
+        selectedVoter = getBoothVoters()[0] || null;
+        renderAll();
+      });
+      document.getElementById("searchInput").addEventListener("input", renderVoterList);
+      document.getElementById("familySearchInput").addEventListener("input", renderFamilies);
+
+      document.getElementById("templateChips").addEventListener("click", e => {
+        const chip = e.target.closest(".chip");
+        if (!chip) return;
+        settings.tpl = chip.dataset.tpl;
+        saveLS(LS_SETTINGS, settings);
+        document.querySelectorAll("#templateChips .chip").forEach(c => c.classList.remove("active"));
+        chip.classList.add("active");
+        if (selectedVoter) drawSingleSlip(document.getElementById("slipCanvas"), selectedVoter);
+      });
+
+      document.getElementById("paperWidthSelect").value = String(settings.width);
+      document.getElementById("fontScaleSelect").value = String(settings.scale);
+      document.getElementById("paperWidthSelect").addEventListener("change", e => {
+        settings.width = Number(e.target.value);
+        saveLS(LS_SETTINGS, settings);
+        updateHeader();
+        if (selectedVoter) drawSingleSlip(document.getElementById("slipCanvas"), selectedVoter);
+      });
+      document.getElementById("fontScaleSelect").addEventListener("change", e => {
+        settings.scale = Number(e.target.value);
+        saveLS(LS_SETTINGS, settings);
+        if (selectedVoter) drawSingleSlip(document.getElementById("slipCanvas"), selectedVoter);
+      });
+
+      document.querySelectorAll(".nav-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const target = btn.dataset.tab;
+          document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
+          btn.classList.add("active");
+          document.querySelectorAll(".tab-pane").forEach(p => p.classList.remove("active"));
+          document.getElementById(target).classList.add("active");
+          if (target === "tab-batch") renderFamilies();
+          if (target === "tab-printer") loadPairedPrinters();
+          if (target === "tab-setup") renderRoomsEditor();
+        });
+      });
+
+      function renderAll() {
+        updateHeader();
+        renderVoterList();
+        renderFamilies();
+        renderRoomsEditor();
+        if (selectedVoter) drawSingleSlip(document.getElementById("slipCanvas"), selectedVoter);
+      }
+
+      populateBooths();
+      renderAll();
+    })();
+  </script>
+</body>
+</html>
