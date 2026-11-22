@@ -1,0 +1,18 @@
+name: Build Voter Slip Printer APK
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate Android Bluetooth Printer Project
+        run: |
+          if ls *.zip 1> /dev/null 2>&1; then unzip -o '*.zip'; fi
+          mkdir -p app/src/main/assets app/src/main/res/xml app/src/main/res/values app/src/main/res/drawable app/src/main/java/com/krishnanagar/slipprinter
+          if [ -f index.html ]; then cp index.html app/src/main/assets/index.html; elif [ -f voter_slip_printer.html ]; then cp voter_slip_printer.html app/src/main/assets
